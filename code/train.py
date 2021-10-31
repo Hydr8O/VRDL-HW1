@@ -110,7 +110,7 @@ image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                   for x in ['train', 'val']}
 
 class_names = image_datasets['train'].classes
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=16,
+dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=12,
                                              shuffle=True, num_workers=4)
               for x in ['train', 'val']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
@@ -126,7 +126,7 @@ model_ft = model_ft.to(device)
 model_teacher = model_teacher.to(device)
 model_teacher.load_state_dict(torch.load('weights/best_kd_weight_decay_4e-5.pt'))
 criterion = nn.CrossEntropyLoss()
-optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9, weight_decay=4e-3)
+optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9, weight_decay=4e-4)
 num_epochs = 60
 
 exp_lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer_ft, T_max=10, eta_min=0)
@@ -137,9 +137,9 @@ out = torchvision.utils.make_grid(inputs)
 model_ft, losses, accuracies, learning_rate = train_model(model_ft, model_teacher, criterion, optimizer_ft, exp_lr_scheduler,
                        num_epochs=num_epochs)
 
-plot_losses_accuracies(losses, accuracies)
-plot_learning_rate(learning_rate)
 torch.save(model_ft.state_dict(), 'weights/best.pt')
+plot_losses_accuracies(losses, accuracies, num_epochs)
+plot_learning_rate(learning_rate, num_epochs)
 
 
 
