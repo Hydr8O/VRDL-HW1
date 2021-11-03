@@ -10,19 +10,20 @@ from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
 import time
 import pathlib
-import timm
-from timm.models.helpers import load_checkpoint
-from timm.models import convert_splitbn_model
 import os
 import copy
 from PIL import Image
 
 
-def get_class_from_label(image_datasets, label):
-    return list(image_datasets['train'].class_to_idx.keys())[list(image_datasets['train'].class_to_idx.values()).index(label)]
+def get_class_from_label(class_names, label):
+    return class_names[list(range(0, 200)).index(label)]
 
-Hiden_Number = 600
-
+def read_class_names(path):
+    class_names = []
+    with open(path, 'r') as class_names_file:
+        for line in class_names_file:
+            class_names.append(line)
+    return class_names
 
 data_transforms = {
     'train': transforms.Compose([
@@ -39,15 +40,9 @@ data_transforms = {
 ]),
 }
 
-data_dir = '../dataset/birds/data'
-image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
-                                          data_transforms[x])
-                  for x in ['train', 'val']}
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=12,
-                                             shuffle=True, num_workers=4)
-              for x in ['train', 'val']}
-dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
-class_names = image_datasets['train'].classes
+
+class_names = read_class_names('./class_names.txt')
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 model_ft = models.resnext101_32x8d(pretrained=False)
@@ -77,9 +72,9 @@ for image_path in pathlib.Path('../dataset/birds/data/inference').iterdir():
     input = input.unsqueeze(0).to(device)
     outputs = model_ft(input)
     _, preds = torch.max(outputs.data, 1)
-    class_name = get_class_from_label(image_datasets, preds.item())
+    class_name = get_class_from_label(class_names, preds.item())
     names.append(image_path.name)
-    predictions.append(f'{image_path.name} {class_name}\n')
+    predictions.append(f'{image_path.name} {class_name}')
 
 for ans in answer_order:
     idx = names.index(ans)
@@ -87,5 +82,6 @@ for ans in answer_order:
 
 with open('answer.txt', 'w') as submission:
     submission.writelines(final_predictions)
+
 
 
