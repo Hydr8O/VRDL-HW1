@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 
+
 def plot_losses_accuracies(losses, accuracies, num_epochs):
     plt.plot(range(num_epochs), losses['train'])
     plt.plot(range(num_epochs), losses['val'])
@@ -18,6 +19,7 @@ def plot_losses_accuracies(losses, accuracies, num_epochs):
     plt.legend(['Train acc', 'Validation acc'])
     plt.savefig('accuracies.png')
     plt.close()
+
 
 def plot_learning_rate(learning_rate, num_epochs):
     plt.plot(range(num_epochs), learning_rate)

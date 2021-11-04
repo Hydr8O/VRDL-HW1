@@ -12,7 +12,14 @@ import matplotlib.pyplot as plt
 from plot_utils import plot_learning_rate, plot_losses_accuracies
 from kd_utils import loss_fn_kd
 
-def train_model(model, model_teacher, criterion, optimizer, scheduler, num_epochs=25):
+
+def train_model(
+        model,
+        model_teacher,
+        criterion,
+        optimizer,
+        scheduler,
+        num_epochs=25):
     since = time.time()
     losses = {'train': [], 'val': []}
     accuracies = {'train': [], 'val': []}
@@ -37,7 +44,7 @@ def train_model(model, model_teacher, criterion, optimizer, scheduler, num_epoch
             for inputs, labels in dataloaders[phase]:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-                
+
                 with torch.no_grad():
                     outputs_teacher = model_teacher(inputs)
                 optimizer.zero_grad()
@@ -45,18 +52,22 @@ def train_model(model, model_teacher, criterion, optimizer, scheduler, num_epoch
                 with torch.set_grad_enabled(phase == 'train'):
                     outputs = model(inputs)
                     _, preds = torch.max(outputs, 1)
-                    
-                    loss = loss_fn_kd(outputs, labels, outputs_teacher, params, inputs, epoch)
+
+                    loss = loss_fn_kd(
+                        outputs,
+                        labels,
+                        outputs_teacher,
+                        params,
+                        inputs,
+                        epoch
+                    )
 
                     if phase == 'train':
                         loss.backward()
                         optimizer.step()
 
                 running_loss += loss.item() * inputs.size(0)
-                
-                
                 running_corrects += torch.sum(preds == labels.data)
-            
 
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
@@ -77,7 +88,7 @@ def train_model(model, model_teacher, criterion, optimizer, scheduler, num_epoch
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-                
+
         print()
 
     time_elapsed = time.time() - since
@@ -88,6 +99,7 @@ def train_model(model, model_teacher, criterion, optimizer, scheduler, num_epoch
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model, losses, accuracies, learning_rate
+
 
 data_transforms = {
     'train': transforms.Compose([
@@ -110,9 +122,11 @@ image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
                   for x in ['train', 'val']}
 
 class_names = image_datasets['train'].classes
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=12,
-                                             shuffle=True, num_workers=4)
-              for x in ['train', 'val']}
+dataloaders = {x: torch.utils.data.DataLoader(
+        image_datasets[x],
+        batch_size=12,
+        shuffle=True, num_workers=4
+    ) for x in ['train', 'val']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 images, _ = next(iter(dataloaders['train']))
@@ -124,22 +138,35 @@ model_ft.fc = nn.Linear(num_ftrs, 200)
 model_teacher.fc = nn.Linear(num_ftrs, 200)
 model_ft = model_ft.to(device)
 model_teacher = model_teacher.to(device)
-model_teacher.load_state_dict(torch.load('weights/best_kd_weight_decay_4e-5.pt'))
+weight_path = 'weights/best_kd_weight_decay_4e-5.pt'
+model_teacher.load_state_dict(torch.load(weight_path))
 criterion = nn.CrossEntropyLoss()
-optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9, weight_decay=4e-4)
+optimizer_ft = optim.SGD(
+    model_ft.parameters(),
+    lr=0.001,
+    momentum=0.9,
+    weight_decay=4e-4
+)
 num_epochs = 60
 
-exp_lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer_ft, T_max=10, eta_min=0)
+exp_lr_scheduler = lr_scheduler.CosineAnnealingLR(
+    optimizer_ft,
+    T_max=10,
+    eta_min=0
+)
 inputs, classes = next(iter(dataloaders['train']))
 
 
 out = torchvision.utils.make_grid(inputs)
-model_ft, losses, accuracies, learning_rate = train_model(model_ft, model_teacher, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=num_epochs)
+model_ft, losses, accuracies, learning_rate = train_model(
+    model_ft,
+    model_teacher,
+    criterion,
+    optimizer_ft,
+    exp_lr_scheduler
+    num_epochs=num_epochs
+)
 
 torch.save(model_ft.state_dict(), 'weights/best.pt')
 plot_losses_accuracies(losses, accuracies, num_epochs)
 plot_learning_rate(learning_rate, num_epochs)
-
-
-

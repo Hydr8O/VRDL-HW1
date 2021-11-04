@@ -18,12 +18,14 @@ from PIL import Image
 def get_class_from_label(class_names, label):
     return class_names[list(range(0, 200)).index(label)]
 
+
 def read_class_names(path):
     class_names = []
     with open(path, 'r') as class_names_file:
         for line in class_names_file:
             class_names.append(line)
     return class_names
+
 
 data_transforms = {
     'train': transforms.Compose([
@@ -33,11 +35,11 @@ data_transforms = {
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ]),
     'val': transforms.Compose([
-    transforms.Resize(256),
+        transforms.Resize(256),
         transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-]),
+    ]),
 }
 
 
@@ -82,6 +84,3 @@ for ans in answer_order:
 
 with open('answer.txt', 'w') as submission:
     submission.writelines(final_predictions)
-
-
-
