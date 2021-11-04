@@ -1,4 +1,0 @@
-wideresnet50
-batch_size = 12
-CosineAnnealingLR(optimizer_ft, T_max=10, eta_min=0)
-SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
